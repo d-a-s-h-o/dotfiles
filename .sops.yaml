@@ -1,0 +1,4 @@
+creation_rules:
+  - path_regex: dot_env$
+    format: dotenv
+    age: "age17pxcuxjzy9kdgxctszud0h8c8jxqyp275z2w2hl68gl3d6j7v5jsk3m4xs"
