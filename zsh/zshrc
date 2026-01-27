@@ -8,6 +8,178 @@ if [[ -f "$HOME/.dotfiles/zsh/secrets.zsh" ]]; then
   source "$HOME/.dotfiles/zsh/secrets.zsh"
 fi
 
+# -----------------------------------------------------------------------------
+# commit: guided conventional commits with emojis via gum
+#
+# Usage:
+#   commit            # normal
+#   commit dotfiles   # prefixes subject with "[dotfiles] "
+#
+# Flow:
+#   - Choose type (emoji+type)
+#   - Choose scope (defaults or "other..." -> input)
+#   - Enter subject
+#   - Optional body (multiline)
+#   - Show status + diffstat + message preview
+#   - Confirm: run git commit
+#     If cancelled: copy the git commit command to clipboard
+# -----------------------------------------------------------------------------
+
+commit() {
+  emulate -L zsh
+  setopt localoptions pipefail
+
+  command -v git >/dev/null 2>&1 || { echo "Missing: git" >&2; return 1; }
+  command -v gum >/dev/null 2>&1 || { echo "Missing: gum" >&2; return 1; }
+
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "Not inside a git repository." >&2
+    return 1
+  }
+
+  # Ensure there is something to commit
+  if git diff --quiet && git diff --cached --quiet; then
+    echo "No changes to commit." >&2
+    return 1
+  fi
+
+  # Stage if needed
+  if git diff --cached --quiet; then
+    if gum confirm "No staged changes. Stage interactively (git add -p)?" ; then
+      git add -p || return 1
+      git diff --cached --quiet && { echo "Still nothing staged." >&2; return 1; }
+    else
+      echo "Aborted (nothing staged)." >&2
+      return 1
+    fi
+  fi
+
+  local project="${1:-}"
+  local prefix=""
+  [[ -n "$project" ]] && prefix="[$project] "
+
+  # Types with emojis
+  local -a types
+  types=(
+    "✨ feat"
+    "🐛 fix"
+    "📝 docs"
+    "🎨 style"
+    "♻️  refactor"
+    "✅ test"
+    "🏗️  build"
+    "🧹 chore"
+    "⏪ revert"
+  )
+
+  local type_choice emoji type
+  type_choice="$(gum choose --header="Select commit type" "${types[@]}")" || return 1
+  emoji="${type_choice%% *}"
+  type="${type_choice#* }"
+
+  # Scope (defaults + other)
+  local -a scopes
+  scopes=(api cli auth other...)
+
+  local scope_choice scope
+  scope_choice="$(gum choose --header="Select scope" "${scopes[@]}")" || return 1
+  if [[ "$scope_choice" == "other..." ]]; then
+    scope="$(gum input --prompt "scope: " --placeholder "e.g. infra, deps, ui")" || return 1
+  else
+    scope="$scope_choice"
+  fi
+
+  scope="${scope// /-}"
+  scope="${scope//[^A-Za-z0-9_.-]/-}"
+  [[ -z "$scope" ]] && scope="misc"
+
+  # Subject (manual validation loop; compatible with older gum)
+  local subject
+  while true; do
+    subject="$(gum input --prompt "subject: " --placeholder "short, imperative (<= 72 chars)")" || return 1
+
+    # trim leading/trailing whitespace
+    subject="${subject#"${subject%%[![:space:]]*}"}"
+    subject="${subject%"${subject##*[![:space:]]}"}"
+
+    if [[ -z "$subject" ]]; then
+      gum style --border normal --padding "1" "Subject cannot be empty." >/dev/null
+      continue
+    fi
+    if (( ${#subject} > 72 )); then
+      gum style --border normal --padding "1" "Subject too long (${#subject}/72). Shorten it." >/dev/null
+      continue
+    fi
+    break
+  done
+
+  # Optional body
+  local body=""
+  if gum confirm "Add body (multiline)?" ; then
+    body="$(gum write --prompt "body: " --placeholder "Optional. Explain what/why.")" || return 1
+    [[ -n "${body//[[:space:]]/}" ]] || body=""
+  fi
+
+  local subject_line="${prefix}${emoji} ${type}(${scope}): ${subject}"
+
+  # Previews
+  local status_summary diffstat
+  status_summary="$(git status --porcelain=v1 2>/dev/null | sed -e 's/^/  /')"
+  diffstat="$(git diff --cached --stat 2>/dev/null | sed -e 's/^/  /')"
+
+  # Build safe clipboard command string
+  local -a cmd
+  cmd=(git commit -m "$subject_line")
+  [[ -n "$body" ]] && cmd+=(-m "$body")
+
+  local cmd_str="" arg
+  for arg in "${cmd[@]}"; do
+    cmd_str+="${(q)arg} "
+  done
+  cmd_str="${cmd_str% }"
+
+  # Show summary + message preview
+  {
+    echo "Staged changes (status):"
+    echo "${status_summary:-  (none)}"
+    echo ""
+    echo "Diffstat:"
+    echo "${diffstat:-  (none)}"
+    echo ""
+    echo "Commit message preview:"
+    echo "  $subject_line"
+    if [[ -n "$body" ]]; then
+      echo ""
+      echo "  ---"
+      echo "$body" | sed -e 's/^/  /'
+    fi
+  } | gum style --border normal --padding "1" --margin "1" >/dev/null
+
+  if gum confirm "Run commit now?" ; then
+    if [[ -n "$body" ]]; then
+      git commit -m "$subject_line" -m "$body"
+    else
+      git commit -m "$subject_line"
+    fi
+    return $?
+  fi
+
+  # Cancel -> copy command
+  if command -v pbcopy >/dev/null 2>&1; then
+    print -r -- "$cmd_str" | pbcopy
+    echo "Cancelled. Copied command to clipboard."
+  elif command -v wl-copy >/dev/null 2>&1; then
+    print -r -- "$cmd_str" | wl-copy
+    echo "Cancelled. Copied command to clipboard."
+  elif command -v xclip >/dev/null 2>&1; then
+    print -r -- "$cmd_str" | xclip -selection clipboard
+    echo "Cancelled. Copied command to clipboard."
+  else
+    echo "Cancelled. Clipboard tool not found. Here is the command:"
+    echo "$cmd_str"
+  fi
+}
+
 # Path to your Oh My Zsh installation.
 export ZSH_DISABLE_COMPFIX=true
 export ZSH="$HOME/.oh-my-zsh"
