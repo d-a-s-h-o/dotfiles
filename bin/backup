@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+mkdir -p "$ROOT/brew"
+
+if command -v brew >/dev/null 2>&1; then
+  brew bundle dump --force --describe --file "$ROOT/Brewfile"
+  brew leaves > "$ROOT/brew/leaves.txt"
+  echo "Wrote Brewfile and brew/leaves.txt"
+else
+  echo "brew not found; skipping Brewfile dump" >&2
+fi
+

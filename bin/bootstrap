@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOT="$HOME/.dotfiles"
+
+mkdir -p "$HOME/.config/direnv"
+mkdir -p "$HOME/.config/nvim"
+mkdir -p "$HOME/.config/redbrick"
+mkdir -p "$HOME/.config/git"
+
+# Install Homebrew if missing
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # Make brew available in this script run
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  fi
+fi
+
+# Install packages
+if [[ -f "$ROOT/Brewfile" ]]; then
+  echo "Installing Brewfile packages..."
+  brew bundle install --file "$ROOT/Brewfile"
+else
+  echo "No Brewfile found; skipping brew bundle install" >&2
+fi
+
+# Symlink configs
+echo "Linking configs..."
+ln -snf "$ROOT/zsh/zshrc" "$HOME/.zshrc"
+ln -snf "$ROOT/zsh/secret.zsh" "$DOT/zsh/secret.zsh" 2>/dev/null || true
+ln -snf "$ROOT/config/direnv/direnvrc" "$HOME/.config/direnv/direnvrc"
+ln -snf "$ROOT/config/git/config" "$HOME/.gitconfig"
+ls -snf "$ROOT/config/git/config" "$HOME/.config/git/config" 2>/dev/null || true
+ln -snf "$ROOT/config/nvim/init.lua" "$HOME/.config/nvim/init.lua"
+ln -snf "$ROOT/config/redbrick" "$HOME/.config/redbrick" 2>/dev/null || true
+
+echo "Bootstrap complete. Restart your shell."
+

@@ -1,0 +1,1038 @@
+#!/usr/bin/env zsh
+# Dasho's Dotfiles Wizard 🧙
+# A magical, self-contained interactive wizard for managing dotfiles
+# Works on fresh Linux/macOS systems with just internet access
+
+set -eo pipefail
+
+# Color Palette (Soft Gradients & Pastels)
+# ----------------------------------------
+# 183 - Soft Lavender (headers, prompts)
+# 219 - Light Pink (selected items, cursor)
+# 147 - Muted Purple (list items)
+# 117 - Pale Cyan (info messages)
+# 114 - Soft Green (success messages)
+# 210 - Coral (error messages)
+# 222 - Peach (warnings)
+# 242 - Warm Gray (subtle text)
+
+# Colors for fallback (before gum is available)
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# Paths
+SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PRIVATE_DIR="$ROOT/private"
+
+# ============================================================================
+# SELF-BOOTSTRAP: Install wizard dependencies
+# ============================================================================
+
+has_command() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+install_homebrew() {
+  echo "${BLUE}📦 Installing Homebrew...${RESET}"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [[ -x /opt/homebrew/bin/brew ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x /usr/local/bin/brew ]]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+  else
+    # Linux
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    fi
+  fi
+}
+
+wizard_bootstrap() {
+  echo "${MAGENTA}${BOLD}"
+  echo "╔════════════════════════════════════════════════════════════╗"
+  echo "║                                                            ║"
+  echo "║           🧙  Dasho's Dotfiles Wizard  🧙                  ║"
+  echo "║                                                            ║"
+  echo "║         Making magic happen on your machine...             ║"
+  echo "║                                                            ║"
+  echo "╚════════════════════════════════════════════════════════════╝"
+  echo "${RESET}"
+  echo ""
+  echo "${CYAN}Checking for wizard dependencies...${RESET}"
+  echo ""
+
+  # Check/install Homebrew first
+  if ! has_command brew; then
+    echo "${YELLOW}⚠️  Homebrew not found. Installing...${RESET}"
+    install_homebrew
+  else
+    echo "${GREEN}✓${RESET} Homebrew"
+  fi
+
+  # Install essential tools
+  local tools=("gum" "glow" "age" "jq")
+  local to_install=()
+
+  for tool in "${tools[@]}"; do
+    if ! has_command "$tool"; then
+      echo "${YELLOW}⚠️  $tool not found${RESET}"
+      to_install+=("$tool")
+    else
+      echo "${GREEN}✓${RESET} $tool"
+    fi
+  done
+
+  if [[ ${#to_install[@]} -gt 0 ]]; then
+    echo ""
+    echo "${BLUE}📦 Installing missing tools: ${to_install[*]}${RESET}"
+    brew install "${to_install[@]}"
+    echo ""
+    echo "${GREEN}✓ All wizard dependencies installed!${RESET}"
+  else
+    echo ""
+    echo "${GREEN}✓ All wizard dependencies present!${RESET}"
+  fi
+
+  echo ""
+  sleep 1
+}
+
+# ============================================================================
+# GUM-POWERED UI HELPERS
+# ============================================================================
+
+show_header() {
+  clear
+  gum style \
+    --border double \
+    --border-foreground 183 \
+    --padding "1 2" \
+    --margin "1 0" \
+    --align center \
+    --foreground 219 \
+    "🧙  Dasho's Dotfiles Wizard  🧙" \
+    "" \
+    "Your magical companion for dotfiles mastery"
+}
+
+show_success() {
+  gum style \
+    --foreground 114 \
+    "✓ $1"
+}
+
+show_error() {
+  gum style \
+    --foreground 210 \
+    "✗ $1"
+}
+
+show_info() {
+  gum style \
+    --foreground 117 \
+    "ℹ $1"
+}
+
+spinner_run() {
+  local title="$1"
+  shift
+  gum spin --spinner dot --title "$title" -- "$@"
+}
+
+wait_for_key() {
+  gum style --foreground 242 --italic "Press any key to continue..."
+  read -k1 -s
+  return 0
+}
+
+confirm() {
+  command gum confirm \
+    --prompt.foreground 183 \
+    --selected.foreground 219 \
+    "$@"
+}
+
+# ============================================================================
+# ERROR HANDLING WITH RETRY/SKIP OPTIONS
+# ============================================================================
+
+handle_error() {
+  local error_msg="$1"
+  local context="$2"
+  
+  show_error "$error_msg"
+  echo ""
+  
+  gum style --foreground 183 --italic "What would you like to do?"
+  
+  local choice=$(gum choose \
+    --cursor.foreground 219 \
+    --selected.foreground 183 \
+    --cursor "→ " \
+    "🔄 Retry" \
+    "⏭️  Skip and continue" \
+    "🛑 Exit wizard" \
+    "📋 Show error details")
+  
+  case "$choice" in
+    *Retry*)
+      return 0
+      ;;
+    *Skip*)
+      show_info "Skipping: $context"
+      sleep 1
+      return 1
+      ;;
+    *Exit*)
+      echo ""
+      gum style --foreground 9 "Exiting wizard. See you next time! 👋"
+      exit 1
+      ;;
+    *details*)
+      gum style --foreground 8 "$context"
+      echo ""
+      wait_for_key
+      handle_error "$error_msg" "$context"
+      return $?
+      ;;
+  esac
+}
+
+safe_run() {
+  local description="$1"
+  shift
+  
+  local output
+  local exit_code
+  
+  while true; do
+    output=$("$@" 2>&1) && exit_code=0 || exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+      return 0
+    else
+      if handle_error "$description failed" "$output"; then
+        continue  # Retry
+      else
+        return 1  # Skip
+      fi
+    fi
+  done
+}
+
+# ============================================================================
+# CORE OPERATIONS
+# ============================================================================
+
+run_bootstrap() {
+  show_header
+  gum style --foreground 183 --bold "🚀 Bootstrap: Fresh Machine Setup"
+  echo ""
+  
+  gum style --foreground 183 "This will install Homebrew (if needed), install packages from Brewfile,"
+  gum style --foreground 183 "and link all your dotfiles to the right places."
+  echo ""
+  
+  if ! confirm "Ready to bootstrap this machine?"; then
+    return
+  fi
+  
+  echo ""
+  spinner_run "Installing Homebrew if needed..." bash "$ROOT/bin/bootstrap"
+  
+  if [[ $? -eq 0 ]]; then
+    echo ""
+    show_success "Bootstrap completed successfully!"
+    echo ""
+    gum style --foreground 222 "⚠️  Remember to restart your shell or run: source ~/.zshrc"
+  else
+    safe_run "Bootstrap" bash "$ROOT/bin/bootstrap"
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+run_backup() {
+  show_header
+  gum style --foreground 183 --bold "💾 Backup: Save Brewfile & Package List"
+  echo ""
+  
+  gum style --foreground 183 "Updates Brewfile and brew/leaves.txt with currently installed packages."
+  echo ""
+  
+  if ! confirm "Run backup now?"; then
+    return
+  fi
+  
+  echo ""
+  spinner_run "Backing up Brewfile and brew leaves..." bash "$ROOT/bin/backup"
+  
+  echo ""
+  show_success "Backup completed!"
+  
+  if has_command glow && [[ -f "$ROOT/Brewfile" ]]; then
+    echo ""
+    if confirm "View the updated Brewfile?"; then
+      glow "$ROOT/Brewfile" -p
+    fi
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+run_backup_secrets() {
+  show_header
+  gum style --foreground 183 --bold "🔐 Backup Secrets: Encrypt GPG/SSH/Age/Skate/Oh-My-Zsh"
+  echo ""
+  
+  gum style --foreground 183 "Creates an encrypted archive with:"
+  gum style --foreground 147 "  • GPG keys"
+  gum style --foreground 147 "  • SSH keys and config"
+  gum style --foreground 147 "  • Age identities"
+  gum style --foreground 147 "  • Skate database"
+  gum style --foreground 147 "  • Oh-My-Zsh custom configs"
+  echo ""
+  
+  local default_name="keys-$(date +%Y%m%d).tar.gz.age"
+  local archive_name=$(gum input \
+    --placeholder "$default_name" \
+    --prompt "Archive name: " \
+    --value "$default_name" \
+    --prompt.foreground 183 \
+    --cursor.foreground 219)
+  
+  [[ -z "$archive_name" ]] && archive_name="$default_name"
+  
+  local archive_path="$PRIVATE_DIR/$archive_name"
+  
+  echo ""
+  spinner_run "Creating encrypted backup..." bash "$ROOT/bin/backup-secrets" "$archive_path"
+  
+  echo ""
+  show_success "Secrets backed up to: $archive_name"
+  
+  echo ""
+  wait_for_key
+}
+
+run_restore_secrets() {
+  show_header
+  gum style --foreground 183 --bold "🔓 Restore Secrets: Decrypt & Restore"
+  echo ""
+  
+  if [[ ! -d "$PRIVATE_DIR" ]] || [[ -z "$(ls -A "$PRIVATE_DIR"/*.age 2>/dev/null)" ]]; then
+    show_error "No encrypted archives found in $PRIVATE_DIR"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  local archives=($(ls "$PRIVATE_DIR"/*.age 2>/dev/null))
+  
+  if [[ ${#archives[@]} -eq 0 ]]; then
+    show_error "No .age archives found"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  gum style --foreground 183 "Select an archive to restore:"
+  echo ""
+  
+  local selected=$(gum choose \
+    --cursor.foreground 219 \
+    --selected.foreground 183 \
+    --cursor "→ " \
+    "${archives[@]##*/}")
+  local archive_path="$PRIVATE_DIR/$selected"
+  
+  echo ""
+  gum style --foreground 222 "⚠️  This will restore GPG, SSH, Age, Skate, and Oh-My-Zsh configs"
+  
+  if ! confirm "Restore from $selected?"; then
+    return
+  fi
+  
+  echo ""
+  spinner_run "Restoring secrets..." bash "$ROOT/bin/restore-secrets" "$archive_path"
+  
+  echo ""
+  show_success "Secrets restored successfully!"
+  
+  echo ""
+  wait_for_key
+}
+
+run_link() {
+  show_header
+  gum style --foreground 183 --bold "🔗 Link: Symlink Dotfiles"
+  echo ""
+  
+  gum style --foreground 183 "Creates symlinks for:"
+  gum style --foreground 147 "  • ~/.zshrc"
+  gum style --foreground 147 "  • ~/.config/direnv/direnvrc"
+  gum style --foreground 147 "  • ~/.gitconfig"
+  gum style --foreground 147 "  • ~/.config/nvim/init.lua"
+  gum style --foreground 147 "  • ~/.config/redbrick/*"
+  echo ""
+  
+  if ! confirm "Create/update symlinks?"; then
+    return
+  fi
+  
+  echo ""
+  
+  mkdir -p "$HOME/.config/direnv"
+  mkdir -p "$HOME/.config/git"
+  mkdir -p "$HOME/.config/nvim"
+  mkdir -p "$HOME/.config/redbrick"
+  
+  ln -snf "$ROOT/zsh/zshrc" "$HOME/.zshrc" && show_success "Linked ~/.zshrc"
+  ln -snf "$ROOT/config/direnv/direnvrc" "$HOME/.config/direnv/direnvrc" && show_success "Linked direnvrc"
+  ln -snf "$ROOT/config/git/config" "$HOME/.gitconfig" && show_success "Linked gitconfig"
+  ln -snf "$ROOT/config/nvim/init.lua" "$HOME/.config/nvim/init.lua" && show_success "Linked nvim config"
+  ln -snf "$ROOT/config/redbrick" "$HOME/.config/redbrick" && show_success "Linked redbrick config"
+  
+  echo ""
+  show_success "All dotfiles linked!"
+  
+  echo ""
+  wait_for_key
+}
+
+run_check() {
+  show_header
+  gum style --foreground 183 --bold "🔍 Check: Verify Dependencies"
+  echo ""
+  
+  local tools=("direnv" "skate" "age" "just" "brew" "gum" "glow" "git" "zsh")
+  local missing=()
+  
+  for tool in "${tools[@]}"; do
+    if has_command "$tool"; then
+      show_success "$tool"
+    else
+      show_error "$tool (missing)"
+      missing+=("$tool")
+    fi
+  done
+  
+  echo ""
+  
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    gum style --foreground 10 --bold "✨ All dependencies present! You're all set!"
+  else
+    gum style --foreground 222 "Missing tools: ${missing[*]}"
+    echo ""
+    if confirm "Install missing tools via Homebrew?"; then
+      echo ""
+      spinner_run "Installing missing tools..." brew install "${missing[@]}"
+      echo ""
+      show_success "Tools installed!"
+    fi
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+# ============================================================================
+# GIT OPERATIONS
+# ============================================================================
+
+check_git_repo() {
+  if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    show_header
+    show_error "Not a git repository"
+    gum style --foreground 147 "The directory $ROOT is not a git repository."
+    gum style --foreground 147 "Please initialize a repository first."
+    echo ""
+    if confirm "Initialize a new git repository here?"; then
+      git -C "$ROOT" init
+      show_success "Git repository initialized at $ROOT"
+    fi
+    echo ""
+    wait_for_key
+    return 1
+  fi
+  return 0
+}
+
+git_menu() {
+  if ! check_git_repo; then
+    return
+  fi
+
+  while true; do
+    show_header
+    gum style --foreground 183 --bold "🌳 Git Operations"
+    echo ""
+    
+    local choice=$(gum choose \
+      --cursor.foreground 219 \
+      --selected.foreground 183 \
+      --cursor "→ " \
+      "📊 Status" \
+      "💾 Commit changes" \
+      "🔄 Sync (pull + push)" \
+      "⬆️  Push" \
+      "⬇️  Pull" \
+      "🔧 Configure remote" \
+      "🔑 GitHub authentication" \
+      "← Back to main menu")
+    
+    case "$choice" in
+      *Status*)
+        git_status
+        ;;
+      *Commit*)
+        git_commit
+        ;;
+      *Sync*)
+        git_sync
+        ;;
+      *Push*)
+        git_push
+        ;;
+      *Pull*)
+        git_pull
+        ;;
+      *remote*)
+        git_configure_remote
+        ;;
+      *authentication*)
+        github_auth
+        ;;
+      *Back*)
+        break
+        ;;
+    esac
+  done
+}
+
+git_status() {
+  show_header
+  gum style --foreground 183 --bold "📊 Git Status"
+  echo ""
+  
+  cd "$ROOT"
+  git status
+  
+  echo ""
+  wait_for_key
+}
+
+git_commit() {
+  show_header
+  gum style --foreground 183 --bold "💾 Commit Changes"
+  echo ""
+  
+  cd "$ROOT"
+  
+  local status_output=$(git status --porcelain)
+  
+  if [[ -z "$status_output" ]]; then
+    show_info "No changes to commit"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  echo "Changed files:"
+  git status --short
+  echo ""
+  
+  if ! confirm "Stage all changes?"; then
+    show_info "Commit cancelled"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  git add -A
+  
+  echo ""
+  local commit_msg=$(gum input \
+    --placeholder "Enter commit message" \
+    --prompt "Message: " \
+    --prompt.foreground 183 \
+    --cursor.foreground 219)
+  
+  if [[ -z "$commit_msg" ]]; then
+    show_error "Commit message required"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  echo ""
+  spinner_run "Committing changes..." git commit -m "$commit_msg"
+  
+  echo ""
+  show_success "Changes committed!"
+  
+  echo ""
+  if confirm "Push to remote?"; then
+    git_push
+  else
+    wait_for_key
+  fi
+}
+
+git_sync() {
+  show_header
+  gum style --foreground 183 --bold "🔄 Sync: Pull + Push"
+  echo ""
+  
+  cd "$ROOT"
+  
+  # Check if remote is configured
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    show_error "No remote repository configured"
+    gum style --foreground 147 "Configure a remote first in the Git menu."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  if spinner_run "Pulling from remote..." git pull 2>&1; then
+    show_success "Pulled successfully"
+  else
+    echo ""
+    show_error "Git pull failed"
+    gum style --foreground 147 "Check your internet connection and authentication."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  echo ""
+  
+  local status_output=$(git status --porcelain)
+  
+  if [[ -n "$status_output" ]]; then
+    gum style --foreground 222 "You have uncommitted changes."
+    if confirm "Commit and push?"; then
+      git_commit
+      return
+    fi
+  fi
+  
+  if spinner_run "Pushing to remote..." git push 2>&1; then
+    echo ""
+    show_success "Synced successfully!"
+  else
+    echo ""
+    show_error "Git push failed"
+    gum style --foreground 147 "Check your authentication and permissions."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+git_push() {
+  show_header
+  gum style --foreground 183 --bold "⬆️  Push to Remote"
+  echo ""
+  
+  cd "$ROOT"
+  
+  # Check if remote is configured
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    show_error "No remote repository configured"
+    gum style --foreground 147 "Configure a remote first in the Git menu."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  if spinner_run "Pushing to remote..." git push 2>&1; then
+    echo ""
+    show_success "Pushed successfully!"
+  else
+    echo ""
+    show_error "Git push failed"
+    gum style --foreground 147 "Check authentication and permissions."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+git_pull() {
+  show_header
+  gum style --foreground 183 --bold "⬇️  Pull from Remote"
+  echo ""
+  
+  cd "$ROOT"
+  
+  # Check if remote is configured
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    show_error "No remote repository configured"
+    gum style --foreground 147 "Configure a remote first in the Git menu."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  if spinner_run "Pulling from remote..." git pull 2>&1; then
+    echo ""
+    show_success "Pulled successfully!"
+  else
+    echo ""
+    show_error "Git pull failed"
+    gum style --foreground 147 "Check your internet connection and authentication."
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+git_configure_remote() {
+  show_header
+  gum style --foreground 183 --bold "🔧 Configure Git Remote"
+  echo ""
+  
+  cd "$ROOT"
+  
+  local current_remote=$(git remote get-url origin 2>/dev/null || echo "")
+  
+  if [[ -n "$current_remote" ]]; then
+    gum style "Current remote: $current_remote"
+    echo ""
+  else
+    show_info "No remote configured"
+    echo ""
+  fi
+  
+  local action=$(gum choose \
+    --cursor.foreground 219 \
+    --selected.foreground 183 \
+    --cursor "→ " \
+    "➕ Add/Update remote" \
+    "🗑️  Remove remote" \
+    "← Back")
+  
+  case "$action" in
+    *Add*)
+      echo ""
+      local remote_url=$(gum input \
+        --placeholder "https://github.com/username/repo.git" \
+        --prompt "Remote URL: " \
+        --prompt.foreground 183 \
+        --cursor.foreground 219)
+      
+      if [[ -z "$remote_url" ]]; then
+        show_error "Remote URL required"
+      else
+        if [[ -n "$current_remote" ]]; then
+          git remote set-url origin "$remote_url"
+        else
+          git remote add origin "$remote_url"
+        fi
+        show_success "Remote configured: $remote_url"
+      fi
+      ;;
+    *Remove*)
+      git remote remove origin 2>/dev/null
+      show_success "Remote removed"
+      ;;
+  esac
+  
+  echo ""
+  wait_for_key
+}
+
+github_auth() {
+  show_header
+  gum style --foreground 183 --bold "🔑 GitHub Authentication"
+  echo ""
+  
+  gum style --foreground 183 "Choose authentication method:"
+  echo ""
+  
+  local method=$(gum choose \
+    --cursor.foreground 219 \
+    --selected.foreground 183 \
+    --cursor "→ " \
+    "🌐 Device flow (browser)" \
+    "🔑 Personal Access Token" \
+    "📋 Check current auth" \
+    "← Back")
+  
+  case "$method" in
+    *Device*)
+      github_device_flow
+      ;;
+    *Token*)
+      github_token_setup
+      ;;
+    *Check*)
+      github_check_auth
+      ;;
+  esac
+}
+
+github_device_flow() {
+  show_header
+  gum style --foreground 183 --bold "🌐 GitHub Device Flow Authentication"
+  echo ""
+  
+  if ! has_command gh; then
+    gum style --foreground 222 "GitHub CLI (gh) not found"
+    echo ""
+    if confirm "Install GitHub CLI?"; then
+      spinner_run "Installing gh..." brew install gh
+      echo ""
+    else
+      return
+    fi
+  fi
+  
+  # Check if GITHUB_TOKEN is set
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    show_info "GITHUB_TOKEN environment variable is set"
+    echo ""
+    gum style --foreground 147 "GitHub CLI will use this token automatically."
+    gum style --foreground 147 "To use device flow instead, unset GITHUB_TOKEN first:"
+    gum style --foreground 242 "  unset GITHUB_TOKEN"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  gum style --foreground 183 "This will open GitHub in your browser for authentication."
+  echo ""
+  
+  if ! confirm "Continue?"; then
+    return
+  fi
+  
+  echo ""
+  
+  if gh auth login 2>&1; then
+    echo ""
+    show_success "Authentication complete!"
+    
+    echo ""
+    if confirm "Configure git to use gh credentials?"; then
+      gh auth setup-git 2>/dev/null && show_success "Git configured to use gh credentials" || show_info "Git already configured"
+    fi
+  else
+    local gh_exit=$?
+    echo ""
+    show_error "GitHub authentication failed"
+    gum style --foreground 147 "You may already be authenticated, or there was a network issue."
+    echo ""
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+github_token_setup() {
+  show_header
+  gum style --foreground 183 --bold "🔑 GitHub Personal Access Token Setup"
+  echo ""
+  
+  gum style --foreground 183 "To create a token:"
+  gum style --foreground 147 "  1. Go to: https://github.com/settings/tokens"
+  gum style --foreground 147 "  2. Click 'Generate new token (classic)'"
+  gum style --foreground 147 "  3. Select scopes: repo, workflow, write:packages"
+  gum style --foreground 147 "  4. Generate and copy the token"
+  echo ""
+  
+  if ! confirm "Have you created a token?"; then
+    return
+  fi
+  
+  echo ""
+  local token=$(gum input \
+    --password \
+    --placeholder "ghp_..." \
+    --prompt "Token: " \
+    --prompt.foreground 183 \
+    --cursor.foreground 219)
+  
+  if [[ -z "$token" ]]; then
+    show_error "Token required"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  # Store in git config
+  cd "$ROOT"
+  local remote_url=$(git remote get-url origin 2>/dev/null || echo "")
+  
+  if [[ -z "$remote_url" ]]; then
+    show_error "No git remote configured. Please configure remote first."
+  else
+    # Update URL to use token
+    if [[ "$remote_url" =~ ^https://github.com/ ]]; then
+      local new_url=$(echo "$remote_url" | sed "s|https://github.com/|https://${token}@github.com/|")
+      git remote set-url origin "$new_url"
+      show_success "Token configured for this repository"
+    else
+      show_error "Remote is not an HTTPS GitHub URL"
+    fi
+  fi
+  
+  echo ""
+  wait_for_key
+}
+
+github_check_auth() {
+  show_header
+  gum style --foreground 183 --bold "📋 GitHub Authentication Status"
+  echo ""
+  
+  if has_command gh; then
+    gh auth status
+  else
+    show_info "GitHub CLI not installed"
+  fi
+  
+  echo ""
+  echo "Git config:"
+  git config --get user.name && show_success "Name: $(git config --get user.name)" || show_error "No user.name set"
+  git config --get user.email && show_success "Email: $(git config --get user.email)" || show_error "No user.email set"
+  
+  echo ""
+  wait_for_key
+}
+
+# ============================================================================
+# INSTALL OH-MY-ZSH
+# ============================================================================
+
+install_omz() {
+  show_header
+  gum style --foreground 183 --bold "🎨 Install Oh-My-Zsh"
+  echo ""
+  
+  if [[ -d "$HOME/.oh-my-zsh" ]]; then
+    show_info "Oh-My-Zsh already installed"
+    echo ""
+    wait_for_key
+    return
+  fi
+  
+  gum style --foreground 183 "This will install Oh-My-Zsh with recommended settings."
+  echo ""
+  
+  if ! confirm "Install Oh-My-Zsh?"; then
+    return
+  fi
+  
+  echo ""
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  
+  echo ""
+  show_success "Oh-My-Zsh installed!"
+  
+  echo ""
+  wait_for_key
+}
+
+# ============================================================================
+# MAIN MENU
+# ============================================================================
+
+main_menu() {
+  while true; do
+    show_header
+    
+    echo ""
+    gum style --foreground 183 --italic "What magical task shall we perform today?"
+    echo ""
+    
+    local choice=$(gum choose \
+      --cursor.foreground 219 \
+      --selected.foreground 183 \
+      --cursor "✨ " \
+      --height 12 \
+      "🚀 Bootstrap (fresh machine setup)" \
+      "💾 Backup (Brewfile & packages)" \
+      "🔐 Backup secrets (GPG/SSH/Age/Skate/OMZ)" \
+      "🔓 Restore secrets" \
+      "🔗 Link dotfiles" \
+      "🔍 Check dependencies" \
+      "🌳 Git operations" \
+      "🎨 Install Oh-My-Zsh" \
+      "🚪 Exit")
+    
+    case "$choice" in
+      *Bootstrap*)
+        run_bootstrap
+        ;;
+      *"Backup ("*)
+        run_backup
+        ;;
+      *"Backup secrets"*)
+        run_backup_secrets
+        ;;
+      *Restore*)
+        run_restore_secrets
+        ;;
+      *Link*)
+        run_link
+        ;;
+      *Check*)
+        run_check
+        ;;
+      *Git*)
+        git_menu
+        ;;
+      *Oh-My-Zsh*)
+        install_omz
+        ;;
+      *Exit*)
+        clear
+        gum style \
+          --foreground 219 \
+          --align center \
+          --padding "1 2" \
+          --border rounded \
+          --border-foreground 183 \
+          "✨ Thank you for using Dasho's Dotfiles Wizard! ✨" \
+          "" \
+          "May your configs be ever in your favor! 🧙"
+        echo ""
+        exit 0
+        ;;
+    esac
+  done
+}
+
+# ============================================================================
+# ENTRY POINT
+# ============================================================================
+
+# First-time bootstrap of wizard itself
+wizard_bootstrap
+
+# Launch main menu
+main_menu

@@ -1,0 +1,40 @@
+# Redbrick config.
+#
+# For a complete list of available options,
+# please visit https://redbrick.chat/configuration/
+
+[servers.404]
+nickname = "Dasho"
+nick_password_file = "~/.config/redbrick/404/password"
+server = "irc.4-0-4.io"
+port = 6667
+channels = ["#chat", "#general", "#help", "#redbrick"]
+use_tls = false
+
+[servers.404.sasl.plain]
+username = "Dasho"
+password_file = "~/.config/redbrick/404/password"
+
+[servers.test-404]
+nickname = "Dasho"
+nick_password_file = "~/.config/redbrick/404/password"
+server = "127.0.0.1"
+port = 6667
+channels = ["#test"]
+use_tls = false
+
+[servers.bhc]
+nickname = "Dasho"
+nick_password_file = "~/.config/redbrick/bhc/password"
+server = "blkhatjxlrvc5aevqzz5t6kxldayog6jlx5h7glnu44euzongl4fh5ad.onion"
+port = 6667
+channels = ["#lobby", "#staff"]
+use_tls = false
+
+[servers.cheshire]
+nickname = "Dasho"
+nick_password_file = "~/.config/redbrick/cheshire/password"
+server = "34vnln24rlakgbk6gpityvljieayyw7q4bhdbbgs6zp2v5nbh345zgad.onion"
+port = 6667
+channels =["#chucky"]
+use_tls = false

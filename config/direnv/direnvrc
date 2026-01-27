@@ -1,0 +1,67 @@
+# direnv/direnvrc
+# -----------------------------------------------------------------------------
+# direnv helpers for loading secrets from Skate.
+#
+# In your project's .envrc:
+#   use_secrets dev GITHUB_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+#
+# Resolution order (per variable):
+#   1) repo.<repo-slug>.<env>   (only if inside a git repo)
+#   2) global.<env>
+#
+# If a variable is missing, direnv will fail the load (safe default).
+# -----------------------------------------------------------------------------
+
+_secrets_repo_slug() {
+  local top remote slug
+
+  top="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  remote="$(git -C "$top" remote get-url origin 2>/dev/null || echo "$top")"
+
+  # normalize + trim
+  remote="${remote%.git}"
+  remote="${remote#git@}"
+  remote="${remote#https://}"
+  remote="${remote#http://}"
+  remote="${remote/:/\/}"     # ssh form host:owner/repo -> host/owner/repo
+
+  slug="${remote//\//_}"      # slashes -> underscores
+  slug="$(printf '%s' "$slug" | tr -c 'A-Za-z0-9_.-' '_' )"
+
+  # remove any trailing underscores that can come from hidden chars/newlines
+  slug="${slug%%_}"
+  # Finally, change all double underscores to single underscores
+  slug="${slug//__/_}"
+
+  printf '%s\n' "$slug"
+}
+
+use_secrets() {
+  local env="${1:-dev}"
+  shift || true
+
+  command -v skate >/dev/null 2>&1 || { log_error "Missing: skate"; return 1; }
+
+  local global_db="global.${env}"
+  local repo_db=""
+
+  if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local slug
+    slug="$(_secrets_repo_slug 2>/dev/null)" && repo_db="repo.${slug}.${env}"
+  fi
+
+  local var val
+  for var in "$@"; do
+    if [ -n "$repo_db" ] && val="$(skate get "${var}@${repo_db}" 2>/dev/null)"; then
+      export "$var=$val"
+      continue
+    fi
+    if val="$(skate get "${var}@${global_db}" 2>/dev/null)"; then
+      export "$var=$val"
+      continue
+    fi
+    log_error "Missing secret: ${var} (looked in ${repo_db:-<no-repo-db>} then ${global_db})"
+    return 1
+  done
+}
+

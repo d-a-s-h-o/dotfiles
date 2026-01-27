@@ -1,0 +1,22 @@
+[user]
+	name = Dasho
+	email = git@dasho.dev
+	signingkey = ~/.ssh/id_ed25519.pub 
+	
+[core]
+	compression = 9
+	whitespace = error
+	preloadindex = true
+	excludesfile = ~/.gitignore
+
+[commit]
+	gpgsign = true
+
+[gpg]
+	format = ssh
+
+[init]
+	defaultBranch = main
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/
