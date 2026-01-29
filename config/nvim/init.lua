@@ -1,5 +1,11 @@
 -- Neovim init.lua
 
+-- Disable unused providers
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_node_provider = 0
+vim.g.loaded_python3_provider = 0
+
 -- Basic options
 vim.opt.number = true                  -- enable absolute line numbers
 vim.opt.relativenumber = true          -- enable relative line numbers
@@ -152,7 +158,7 @@ require('lazy').setup({
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
       require('nvim-treesitter.configs').setup {
-        ensure_installed = { 'lua', 'python', 'javascript', 'go', 'rust' },
+        ensure_installed = { 'lua', 'python', 'javascript', 'go', 'rust', 'regex', 'bash' },
         highlight = { enable = true },
         indent = { enable = true },
       }
@@ -290,6 +296,76 @@ require('lazy').setup({
     require('toggleterm').setup(opts)    -- apply settings
   end,
   },
+
+  -- Notifications
+  {
+    'rcarriga/nvim-notify',
+    event = 'VeryLazy',
+    config = function()
+      local notify = require('notify')
+      notify.setup({
+        background_colour = '#000000',
+        stages = 'fade',
+        timeout = 3000,
+      })
+      vim.notify = notify
+    end,
+  },
+
+  -- Todo comments
+  {
+    'folke/todo-comments.nvim',
+    event = 'VeryLazy',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      require('todo-comments').setup({
+        signs = true,
+        sign_priority = 8,
+        keywords = {
+          FIX = { icon = ' ', color = 'error' },
+          TODO = { icon = ' ', color = 'info' },
+          HACK = { icon = ' ', color = 'warning' },
+          WARN = { icon = ' ', color = 'warning', alt = { 'WARNING', 'XXX' } },
+          PERF = { icon = ' ', alt = { 'OPTIM', 'PERFORMANCE', 'OPTIMIZE' } },
+          NOTE = { icon = ' ', color = 'hint', alt = { 'INFO' } },
+        },
+        highlight = {
+          pattern = [[.*<(KEYWORDS)\s*:]],
+          keyword = 'wide',
+        },
+      })
+    end,
+  },
+
+  -- Noice UI
+  {
+    'folke/noice.nvim',
+    event = 'VeryLazy',
+    dependencies = {
+      'MunifTanjim/nui.nvim',
+      'rcarriga/nvim-notify',
+    },
+    config = function()
+      require('noice').setup({
+        lsp = {
+          override = {
+            ['vim.lsp.util.convert_input_to_markdown_lines'] = true,
+            ['vim.lsp.util.stylize_markdown'] = true,
+            ['cmp.entry.get_documentation'] = true,
+          },
+        },
+        presets = {
+          bottom_search = true,
+          command_palette = true,
+          long_message_to_split = true,
+          inc_rename = false,
+          lsp_doc_border = false,
+        },
+      })
+    end,
+  },
+}, {
+  rocks = { enabled = false },  -- Disable luarocks since no plugins need it
 })
 
 local map = vim.keymap.set
