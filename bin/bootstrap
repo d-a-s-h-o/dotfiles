@@ -8,6 +8,7 @@ mkdir -p "$HOME/.config/direnv"
 mkdir -p "$HOME/.config/nvim"
 mkdir -p "$HOME/.config/redbrick"
 mkdir -p "$HOME/.config/git"
+mkdir -p "$HOME/.config/yazi"
 
 # Install Homebrew if missing
 if ! command -v brew >/dev/null 2>&1; then
@@ -41,6 +42,7 @@ ln -snf "$ROOT/config/git/config" "$HOME/.gitconfig"
 ls -snf "$ROOT/config/git/config" "$HOME/.config/git/config" 2>/dev/null || true
 ln -snf "$ROOT/config/nvim/init.lua" "$HOME/.config/nvim/init.lua"
 ln -snf "$ROOT/config/redbrick" "$HOME/.config/redbrick" 2>/dev/null || true
+ln -snf "$ROOT/config/yazi/yazi.toml" "$HOME/.config/yazi/yazi.toml" 2>/dev/null || true
 
 echo "Bootstrap complete. Restart your shell."
 

@@ -386,6 +386,7 @@ run_link() {
   gum style --foreground 147 "  • ~/.gitconfig"
   gum style --foreground 147 "  • ~/.config/nvim/init.lua"
   gum style --foreground 147 "  • ~/.config/redbrick/*"
+  gum style --foreground 147 "  • ~/,config/yazi/*"
   echo ""
   
   if ! confirm "Create/update symlinks?"; then
@@ -398,12 +399,14 @@ run_link() {
   mkdir -p "$HOME/.config/git"
   mkdir -p "$HOME/.config/nvim"
   mkdir -p "$HOME/.config/redbrick"
+  mkdir -p "$HOME/.config/yazi"
   
   ln -snf "$ROOT/zsh/zshrc" "$HOME/.zshrc" && show_success "Linked ~/.zshrc"
   ln -snf "$ROOT/config/direnv/direnvrc" "$HOME/.config/direnv/direnvrc" && show_success "Linked direnvrc"
   ln -snf "$ROOT/config/git/config" "$HOME/.gitconfig" && show_success "Linked gitconfig"
   ln -snf "$ROOT/config/nvim/init.lua" "$HOME/.config/nvim/init.lua" && show_success "Linked nvim config"
   ln -snf "$ROOT/config/redbrick" "$HOME/.config/redbrick" && show_success "Linked redbrick config"
+  ln -snf "$ROOT/config/yazi/yazi.toml" "$HOME/.config/yazi/yazi.toml" && show_success "Linked yazi config"
   
   echo ""
   show_success "All dotfiles linked!"

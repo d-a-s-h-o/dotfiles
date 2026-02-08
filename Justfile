@@ -57,6 +57,7 @@ link:
   @mkdir -p ~/.config/git
   @mkdir -p ~/.config/nvim
   @mkdir -p ~/.config/redbrick
+  @mkdir -p ~/.config/yazi
 
   @ln -snf {{justfile_directory()}}/zsh/zshrc ~/.zshrc
   @echo "Linked ~/.zshrc"
@@ -70,6 +71,8 @@ link:
   @echo "Linked ~/.config/nvim/init.lua"
   @ln -snf {{justfile_directory()}}/config/redbrick ~/.config/redbrick
   @echo "Linked ~/.config/redbrick/*"
+  @ln -snf {{justfile_directory()}}/config/yazi/yazi.toml ~/.config/yazi/yazi.toml
+  @echo "Linked ~/.config/yazi/*"
   @echo "Linked all dotfiles."
 
 # Full new-machine setup.

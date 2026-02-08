@@ -8,6 +8,7 @@
 	whitespace = error
 	preloadindex = true
 	excludesfile = ~/.gitignore
+	pager = delta
 
 [commit]
 	gpgsign = true
@@ -20,3 +21,9 @@
 
 [url "git@github.com:"]
 	insteadOf = https://github.com/
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+[merge]
+	conflictStyle = zdiff3

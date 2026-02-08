@@ -2,14 +2,22 @@ tap "antoniorodr/lexy"
 tap "charmbracelet/tap"
 tap "danielgatis/imgcat"
 tap "steipete/tap"
+# Simple, modern, secure file encryption
+brew "age"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Analyzes ELF binaries
+brew "binsider"
 # Draw boxes around text
 brew "boxes"
 # GNU compiler collection
 brew "gcc"
 # Resource monitor. C++ version and continuation of bashtop and bpytop
 brew "btop"
+# Multi-shell multi-command argument completer
+brew "carapace"
+# Hacker News in your terminal
+brew "circumflex"
 # Statistics utility to count lines of code
 brew "cloc"
 # Securely send things from one computer to another
@@ -20,6 +28,8 @@ brew "direnv"
 brew "exiftool"
 # Modern, maintained replacement for ls
 brew "eza"
+# Play, record, convert, and stream select audio and video codecs
+brew "ffmpeg"
 # Command-line fuzzy finder written in Go
 brew "fzf"
 # Open-source, cross-platform JavaScript runtime environment
@@ -28,6 +38,8 @@ brew "node"
 brew "gemini-cli"
 # GitHub command-line tool
 brew "gh"
+# Syntax-highlighting pager for git and diff output
+brew "git-delta"
 # Render markdown on the CLI
 brew "glow"
 # Open source programming language to build simple/reliable/efficient software
@@ -40,6 +52,8 @@ brew "himalaya"
 brew "imagemagick"
 # Modular IRC client
 brew "irssi"
+# Lightweight and flexible command-line JSON processor
+brew "jq"
 # Handy way to save and run project-specific commands
 brew "just"
 # Rainbows and unicorns in your console!
@@ -48,24 +62,36 @@ brew "lolcat"
 brew "magic-wormhole"
 # CLI tool for saving complete web pages as a single HTML file
 brew "monolith"
+# Interactive cheatsheet tool for the command-line
+brew "navi"
 # Fast, highly customisable system info script
 brew "neofetch"
 # Ambitious Vim-fork focused on extensibility and agility
 brew "neovim"
+# Modern shell for the GitHub era
+brew "nushell"
 # General-purpose speech recognition model
 brew "openai-whisper"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
 # AI coding agent, built for the terminal
 brew "opencode"
+# Swiss-army knife of markup format conversion
+brew "pandoc"
 # Password manager
 brew "pass"
 # Animated pipes terminal screensaver
 brew "pipes-sh"
+# Execute binaries from Python packages in isolated environments
+brew "pipx"
 # Send emails from your terminal
 brew "pop"
+# Terminal slideshow tool
+brew "presenterm"
 # Hook preloader
 brew "proxychains-ng"
+# Simple, modern, secure file encryption
+brew "rage"
 # Run a command when files change
 brew "reflex"
 # Safe, concurrent, practical language
@@ -88,6 +114,10 @@ brew "tor", restart_service: :changed
 brew "torsocks"
 # Command-line tool for sharing terminal over the web
 brew "ttyd"
+# Terminal UI OS (Terminal Multiplexer)
+brew "tuios"
+# Markup-based typesetting system
+brew "typst"
 # Command-line unarchiving tools supporting multiple formats
 brew "unar"
 # Extremely fast Python package installer and resolver, written in Rust
@@ -96,6 +126,8 @@ brew "uv"
 brew "vhs"
 # Extensible IRC client
 brew "weechat"
+# Feature-rich command-line audio/video downloader
+brew "yt-dlp"
 # Pluggable terminal workspace, with terminal multiplexer as the base feature
 brew "zellij"
 # Shell extension to navigate your filesystem faster
@@ -163,12 +195,11 @@ go "github.com/cespare/reflex"
 go "github.com/sqlc-dev/sqlc/cmd/sqlc"
 go "honnef.co/go/tools/cmd/staticcheck"
 cargo "cross"
-cargo "freenet"
+cargo "termusic"
+cargo "termusic-server"
 flatpak "app.zen_browser.zen"
 flatpak "chat.simplex.simplex"
 flatpak "com.discordapp.Discord"
-flatpak "com.protonvpn.www"
-flatpak "com.vivaldi.Vivaldi"
 flatpak "io.github.celluloid_player.Celluloid"
 flatpak "io.github.flattool.Warehouse"
 flatpak "io.github.peazip.PeaZip"

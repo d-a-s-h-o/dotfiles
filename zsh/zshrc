@@ -208,7 +208,7 @@ ZSH_THEME="robbyrussell"
 # DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
-ENABLE_CORRECTION="true"
+# ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 # You can also set it to another string to have that shown instead of the default red dots.
@@ -286,11 +286,13 @@ alias dotfiles="chezmoi"
 alias ..="cd .."
 alias ...="cd ../.."
 
-alias bhcli="/home/dasho/dev/bhcli-new/target/release/bhcli --refresh-rate 2 -m"
+alias bhcli="/home/dasho/dev/bhcli-new/target/release/bhcli --refresh-rate 2 --url http://blkhatjxlrvc5aevqzz5t6kxldayog6jlx5h7glnu44euzongl4fh5ad.onion --page-php chat.php -m"
 alias bhcli2="/home/dasho/dev/bhcli-new/target/release/bhcli --refresh-rate 2 --url http://blkh4ylofapg42tj6ht565klld5i42dhjtysvsnnswte4xt4uvnfj5qd.onion --page-php index.php -m"
 alias 404="/home/dasho/dev/bhcli-new/target/release/bhcli --refresh-rate 2 --url https://4-0-4.io/chat/min"
 alias 404tor="/home/dasho/dev/bhcli-new/target/release/bhcli --refresh-rate 2 --url http://4o4o4hn4hsujpnbsso7tqigujuokafxys62thulbk2k3mf46vq22qfqd.onion/chat/min"
 alias tb="cd /home/dasho/Downloads/tor-browser && ./start-tor-browser.desktop"
+
+alias slides="presenterm"
 
 alias -s md="glow"
 alias -s py="$EDITOR"
@@ -332,11 +334,11 @@ alias -g L="| less"
 alias -g H="| head"
 
 # Source and export variables from ~/.env
-# if [ -f ~/.env ]; then
-    # set -a
-    # source ~/.env
-    # set +a
-# fi
+if [ -f ~/.env ]; then
+    set -a
+    source ~/.env
+    set +a
+fi
 export PATH=$HOME/.local/bin:$PATH
 export PATH="$HOME/.config/emacs/bin:$PATH"
 export PATH="$HOME/Applications/halloy/bin:$PATH"
@@ -363,3 +365,7 @@ autoload -U compinit && compinit
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 source <(carapace _carapace)
+export PATH="$HOME/.local/bin:$PATH"
+
+# OpenClaw Completion
+# source <(openclaw completion --shell zsh)
