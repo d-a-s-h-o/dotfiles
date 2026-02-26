@@ -337,6 +337,23 @@ require('lazy').setup({
     end,
   },
 
+  -- Neogit
+  {
+    "NeogitOrg/neogit",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    opts = {
+      kind = "tab", -- or "split", "vsplit", "floating"
+      integrations = { diffview = true, telescope = true },
+    },
+    keys = {
+      { "<leader>gg", function() require("neogit").open() end, desc = "Neogit" },
+    },
+  },
+
   -- Noice UI
   {
     'folke/noice.nvim',

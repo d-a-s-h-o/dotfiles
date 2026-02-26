@@ -283,6 +283,8 @@ alias ls="eza --icons"
 alias e="nvim"
 alias dotedit="chezmoi edit"
 alias dotfiles="chezmoi"
+alias py="python3"
+alias ipy="ipython3"
 alias ..="cd .."
 alias ...="cd ../.."
 
@@ -339,9 +341,13 @@ if [ -f ~/.env ]; then
     source ~/.env
     set +a
 fi
-export PATH=$HOME/.local/bin:$PATH
+
+# Add custom bin directories to PATH, starting with Gobin, then Emacs, Cargo, local bin, and finally Homebrew
+export PATH="$HOME/go/bin:$PATH"
 export PATH="$HOME/.config/emacs/bin:$PATH"
-export PATH="$HOME/Applications/halloy/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 
 chpwd() {
     ls
@@ -365,7 +371,6 @@ autoload -U compinit && compinit
 export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense' # optional
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
 source <(carapace _carapace)
-export PATH="$HOME/.local/bin:$PATH"
 
 # OpenClaw Completion
 # source <(openclaw completion --shell zsh)
