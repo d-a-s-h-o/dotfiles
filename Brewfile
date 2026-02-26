@@ -1,11 +1,36 @@
 tap "antoniorodr/lexy"
 tap "charmbracelet/tap"
 tap "danielgatis/imgcat"
+tap "go-task/tap"
 tap "steipete/tap"
+# Mozilla CA certificate store
+brew "ca-certificates"
+# Cryptography and SSL/TLS Toolkit
+brew "openssl@3"
+# Extraction utility for .zip compressed archives
+brew "unzip"
+# General-purpose data compression with high compression ratio
+brew "xz"
+# Zstandard is a real-time compression algorithm
+brew "zstd"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.14"
+# Passphrase entry dialog utilizing the Assuan protocol
+brew "pinentry"
+# GNU Privacy Guard (OpenPGP)
+brew "gnupg"
+# Email client that runs in your terminal
+brew "aerc"
 # Simple, modern, secure file encryption
 brew "age"
+# Next-generation aircrack with lots of new features
+brew "aircrack-ng"
+# Bourne-Again SHell, a UNIX command interpreter
+brew "bash"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Swiss army knife for network attacks and monitoring
+brew "bettercap"
 # Analyzes ELF binaries
 brew "binsider"
 # Draw boxes around text
@@ -18,12 +43,22 @@ brew "btop"
 brew "carapace"
 # Hacker News in your terminal
 brew "circumflex"
+# Cut, copy, and paste anything, anywhere, all from the terminal
+brew "clipboard"
 # Statistics utility to count lines of code
 brew "cloc"
+# Console Matrix
+brew "cmatrix"
 # Securely send things from one computer to another
 brew "croc"
+# Get a file from an HTTP, HTTPS or FTP server
+brew "curl"
 # Load/unload environment variables based on $PWD
 brew "direnv"
+# GNU Emacs text editor
+brew "emacs"
+# Multipurpose sniffer/interceptor/logger for switched LAN
+brew "ettercap"
 # Perl lib for reading and writing EXIF metadata
 brew "exiftool"
 # Modern, maintained replacement for ls
@@ -38,6 +73,8 @@ brew "node"
 brew "gemini-cli"
 # GitHub command-line tool
 brew "gh"
+# Distributed revision control system
+brew "git"
 # Syntax-highlighting pager for git and diff output
 brew "git-delta"
 # Render markdown on the CLI
@@ -46,16 +83,26 @@ brew "glow"
 brew "go"
 # Tool for glamorous shell scripts
 brew "gum"
+# World's fastest and most advanced password recovery utility
+brew "hashcat"
 # CLI email client written in Rust
 brew "himalaya"
+# Network logon cracker which supports many services
+brew "hydra"
+# Full-featured C++ implementation of I2P client
+brew "i2pd"
 # Tools and libraries to manipulate images in select formats
 brew "imagemagick"
 # Modular IRC client
 brew "irssi"
+# Enhanced version of john, a UNIX password cracker
+brew "john-jumbo"
 # Lightweight and flexible command-line JSON processor
 brew "jq"
 # Handy way to save and run project-specific commands
 brew "just"
+# Simple terminal UI for git commands
+brew "lazygit"
 # Rainbows and unicorns in your console!
 brew "lolcat"
 # Securely transfers data between computers
@@ -78,6 +125,8 @@ brew "ripgrep"
 brew "opencode"
 # Swiss-army knife of markup format conversion
 brew "pandoc"
+# Display directories as trees (with optional color/HTML output)
+brew "tree"
 # Password manager
 brew "pass"
 # Animated pipes terminal screensaver
@@ -124,8 +173,14 @@ brew "unar"
 brew "uv"
 # Your CLI home video recorder
 brew "vhs"
+# Pager/text based browser
+brew "w3m"
 # Extensible IRC client
 brew "weechat"
+# Network analyzer and capture tool - without graphical user interface
+brew "wireshark"
+# Blazing fast terminal file manager written in Rust, based on async I/O
+brew "yazi"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
 # Pluggable terminal workspace, with terminal multiplexer as the base feature
@@ -148,6 +203,8 @@ brew "charmbracelet/tap/soft-serve"
 brew "charmbracelet/tap/wishlist"
 # Display images and gifs in your terminal
 brew "danielgatis/imgcat/imgcat"
+# Task runner / simpler Make alternative written in Go
+brew "go-task/tap/go-task"
 # Grep the GIF. Stick the landing
 brew "steipete/tap/gifgrep"
 # Google CLI for Gmail, Calendar, Drive, and Contacts
@@ -156,9 +213,10 @@ brew "steipete/tap/gogcli"
 brew "steipete/tap/imsg"
 cask "font-monaspace"
 cask "font-ubuntu-nerd-font"
+# Intercept, modify, replay, save HTTP/S traffic
+cask "mitmproxy"
 vscode "benjaminbenais.copilot-theme"
 vscode "bmewburn.vscode-intelephense-client"
-vscode "github.copilot"
 vscode "github.copilot-chat"
 vscode "github.remotehub"
 vscode "golang.go"
@@ -179,6 +237,7 @@ vscode "ms-vscode-remote.remote-wsl"
 vscode "ms-vscode-remote.vscode-remote-extensionpack"
 vscode "ms-vscode.azure-repos"
 vscode "ms-vscode.cmake-tools"
+vscode "ms-vscode.cpp-devtools"
 vscode "ms-vscode.cpptools"
 vscode "ms-vscode.cpptools-extension-pack"
 vscode "ms-vscode.cpptools-themes"
@@ -189,6 +248,7 @@ vscode "ms-vscode.remote-server"
 vscode "openai.chatgpt"
 vscode "rust-lang.rust-analyzer"
 go "github.com/air-verse/air"
+go "github.com/charmbracelet/crush"
 go "golang.org/x/tools/gopls"
 go "github.com/golang-migrate/migrate/v4/cmd/migrate"
 go "github.com/cespare/reflex"
@@ -199,12 +259,19 @@ cargo "termusic"
 cargo "termusic-server"
 flatpak "app.zen_browser.zen"
 flatpak "chat.simplex.simplex"
+flatpak "com.bilingify.readest"
 flatpak "com.discordapp.Discord"
 flatpak "io.github.celluloid_player.Celluloid"
 flatpak "io.github.flattool.Warehouse"
+flatpak "io.github.hkdb.Aerion"
 flatpak "io.github.peazip.PeaZip"
 flatpak "io.github.picocrypt.Picocrypt"
+flatpak "it.mijorus.gearlever"
 flatpak "it.mijorus.smile"
+flatpak "org.filezillaproject.Filezilla"
 flatpak "org.gimp.GIMP"
+flatpak "org.kde.kleopatra"
+flatpak "org.keepassxc.KeePassXC"
 flatpak "org.kiwix.desktop"
 flatpak "org.telegram.desktop"
+flatpak "us.materialio.Materialious"
